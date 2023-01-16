@@ -1,27 +1,37 @@
-apk add htop docker ufw nginx dnscrypt-proxy dnscrypt-proxy-openrc
+apk add docker nginx htop certbot-nginx
 
 umask 077; mkdir /etc/nginx/sites-available; mkdir /etc/nginx/sites-enabled
-// update /etc/nginx/nginx.conf
-# Includes virtual hosts configs.
+
+cp /etc/nginx/http.d/default.conf /etc/nginx/sites-available/wg.conf
+
+vim /etc/nginx/nginx.conf
+
+# Includes virtual hosts configs. comment below
 #include /etc/nginx/http.d/*.conf;
-
-# Include virtual hosts configs.
+# Include virtual hosts configs. add this
 include /etc/nginx/sites-enabled/*;
+ln -s /etc/nginx/sites-available/wg.conf /etc/nginx/sites-enabled/wg.conf
 
-ufw allow ssh/tcp
-ufw allow http
-ufw allow https
+# add proxy to backend server
+vim /etc/nginx/sites-available/wg.conf
+# add server_name winefish.duckdns.org
+# location / {
+#     proxy_set_header Host $host;
+#     proxy_set_header X-Real-IP $remote_addr;
+#     proxy_pass http://localhost:51821;
+# }
+certbot --nginx
+
 rc-update add docker
 rc-update add nginx
-rc-update add dnscrypt-proxy
 service docker start
 service nginx start
 
 docker run -d \
  --name=wine-wg \
- -e PASSWORD="REPLACE_PASSWORD" \
- -e WG_HOST="REPLACE_HOSTNAME" \
- -e WG_DEFAULT_DNS="REPLACE_DNS" \
+ -e PASSWORD="" \
+ -e WG_HOST="" \
+ -e WG_DEFAULT_DNS="" \
  -v ~/.wg:/etc/wireguard \
  -p 51820:51820/udp \
  -p 51821:51821/tcp \
