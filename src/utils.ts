@@ -2,6 +2,8 @@ import {
   WG_ALLOWED_IPS,
   WG_DEFAULT_ADDRESS,
   WG_DEFAULT_ADDRESS_OFFSET,
+  WG_DEFAULT_ADDRESS_OFFSET_V6,
+  WG_DEFAULT_ADDRESS_V6,
   WG_DEFAULT_DNS,
   WG_HOST,
   WG_MTU,
@@ -48,9 +50,11 @@ class Utils {
     const privateKey = await this.processExec('wg genkey');
     const publicKey = await this.processExec(`echo ${privateKey} | wg pubkey`)
     const address = WG_DEFAULT_ADDRESS.replace('x', '1');
+    const address6 = WG_DEFAULT_ADDRESS_V6.replace('x', '1');
     return <WgConfig>{
       server: {
         address,
+        address6,
         privateKey,
         publicKey
       },
@@ -66,7 +70,7 @@ class Utils {
     let out =
       `[Interface]
 PrivateKey = ${config.server.privateKey}
-Address = ${config.server.address}${WG_DEFAULT_ADDRESS_OFFSET}
+Address = ${config.server.address}${WG_DEFAULT_ADDRESS_OFFSET}, ${config.server.address6}${WG_DEFAULT_ADDRESS_OFFSET_V6}
 ListenPort = 51820
 PreUp = ${WG_PRE_UP}
 PostUp = ${WG_POST_UP}
@@ -82,7 +86,7 @@ PostDown = ${WG_POST_DOWN}
 [Peer]
 PublicKey = ${client.publicKey}
 PresharedKey = ${client.preSharedKey}
-AllowedIPs = ${client.address}/32
+AllowedIPs = ${client.address}/32, ${client.address6}/128
 PersistentKeepalive = ${client.persistentKeepalive}
 `;
     }
@@ -90,12 +94,10 @@ PersistentKeepalive = ${client.persistentKeepalive}
       encoding: 'utf8',
       mode: 0o660
     });
-    if (config.clients.length) {
-      try {
-        await this.processExec('wg syncconf wg0 <(wg-quick strip wg0)');
-      } catch (error) {
-        console.error(error)
-      }
+    try {
+      await this.processExec('wg syncconf wg0 <(wg-quick strip wg0)');
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -128,7 +130,7 @@ PersistentKeepalive = ${client.persistentKeepalive}
     // Address = ${client.address}${WG_DEFAULT_ADDRESS_OFFSET}, ${client.address6}${WG_DEFAULT_ADDRESS_OFFSET_V6}
     return `[Interface]
 PrivateKey = ${client.privateKey}
-Address = ${client.address}${WG_DEFAULT_ADDRESS_OFFSET}
+Address = ${client.address}${WG_DEFAULT_ADDRESS_OFFSET}, ${client.address6}${WG_DEFAULT_ADDRESS_OFFSET_V6}
 ${WG_DEFAULT_DNS ? `DNS = ${WG_DEFAULT_DNS}` : ''}
 ${WG_MTU ? `MTU = ${WG_MTU}` : ''}
 
@@ -149,6 +151,24 @@ Endpoint = ${WG_HOST}:${WG_PORT}`;
       });
       if (!client) {
         address = WG_DEFAULT_ADDRESS.replace('x', String(i));
+        break;
+      }
+    }
+    if (!address) {
+      throw new Error('Maximum number of clients reached.');
+    }
+    return address;
+  }
+
+  getClientIp6(wgConfig: WgConfig): string {
+    // Calculate next IP
+    let address;
+    for (let i = 2; i < 255; i++) {
+      const client = wgConfig.clients.find(client => {
+        return client.address6 === WG_DEFAULT_ADDRESS_V6.replace('x', String(i));
+      });
+      if (!client) {
+        address = WG_DEFAULT_ADDRESS_V6.replace('x', String(i));
         break;
       }
     }

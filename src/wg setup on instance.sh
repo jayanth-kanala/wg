@@ -1,4 +1,4 @@
-apk add docker nginx htop certbot-nginx
+apk add docker nginx certbot-nginx
 
 umask 077; mkdir /etc/nginx/sites-available; mkdir /etc/nginx/sites-enabled
 
@@ -16,16 +16,32 @@ ln -s /etc/nginx/sites-available/wg.conf /etc/nginx/sites-enabled/wg.conf
 vim /etc/nginx/sites-available/wg.conf
 # add server_name winefish.duckdns.org
 # location / {
-#     proxy_set_header Host $host;
-#     proxy_set_header X-Real-IP $remote_addr;
-#     proxy_pass http://localhost:51821;
-# }
+# 		proxy_set_header Host $host;
+# 		proxy_set_header X-Real-IP $remote_addr;
+# 		proxy_set_header X-Forwarded-Proto $scheme;
+# 		proxy_pass http://[::]:51821;
+# 	}
 certbot --nginx
+
+# update in wg.conf
+listen [::]:443 ssl ipv6only=on http2; # managed by Certbot
+# comment this
+# listen 443 ssl; # managed by Cerbot
 
 rc-update add docker
 rc-update add nginx
 service docker start
 service nginx start
+
+ docker run -d \
+ --name ipv6nat \
+ --cap-add=NET_ADMIN \
+ --cap-add=SYS_MODULE \
+ --network host \
+ --restart unless-stopped \
+ -v /var/run/docker.sock:/var/run/docker.sock:ro \
+ -v /lib/modules:/lib/modules:ro \
+ robbertkl/ipv6nat
 
 docker run -d \
  --name=wine-wg \
@@ -38,6 +54,8 @@ docker run -d \
  --cap-add=NET_ADMIN \
  --cap-add=SYS_MODULE \
  --sysctl="net.ipv4.ip_forward=1" \
- --sysctl="net.ipv4.conf.all.src_valid_mark=1" \
+ --sysctl="net.ipv6.conf.all.disable_ipv6=0" \
+ --sysctl="net.ipv6.conf.all.forwarding=1" \
+ --sysctl="net.ipv6.conf.all.accept_ra=2" \
  --restart unless-stopped \
  winefish/wine-wg
