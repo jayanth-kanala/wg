@@ -5,26 +5,28 @@
 rm -rf ~/.wg
 docker rm $(docker ps -qa) -f
 docker rmi -f $(docker images -aq) -f
-
 docker build . -t wine-wg
+
 docker run -d \
  --name=wine-wg \
  -e PASSWORD="kk" \
- -e WG_HOST=winefish.duckdns.org \
+ -e WG_HOST=192.168.29.244 \
  -v ~/.wg:/etc/wireguard \
  -p 51820:51820/udp \
  -p 51821:51821/tcp \
  --cap-add=NET_ADMIN \
  --cap-add=SYS_MODULE \
  --sysctl="net.ipv4.ip_forward=1" \
- --sysctl="net.ipv4.conf.all.src_valid_mark=1" \
+ --sysctl="net.ipv6.conf.all.disable_ipv6=0" \
+ --sysctl="net.ipv6.conf.all.forwarding=1" \
+ --sysctl="net.ipv6.conf.all.accept_ra=2" \
  --restart unless-stopped \
  wine-wg
 
 ## server ##############################
-rm -rf ~/.wg
 docker build . -t winefish/wine-wg
 docker push winefish/wine-wg
+
 docker run -d \
  --name=wine-wg \
  -e PASSWORD="REPLACE_PASSWORD" \
@@ -36,6 +38,8 @@ docker run -d \
  --cap-add=NET_ADMIN \
  --cap-add=SYS_MODULE \
  --sysctl="net.ipv4.ip_forward=1" \
- --sysctl="net.ipv4.conf.all.src_valid_mark=1" \
+ --sysctl="net.ipv6.conf.all.disable_ipv6=0" \
+ --sysctl="net.ipv6.conf.all.forwarding=1" \
+ --sysctl="net.ipv6.conf.all.accept_ra=2" \
  --restart unless-stopped \
  winefish/wine-wg

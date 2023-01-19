@@ -20,13 +20,13 @@ declare module 'express-session' {
 app
   .use('/', express.static(path.join(__dirname, '..', 'ui')))
   .disable('etag')
-  .set('trust proxy', 1)
+  .set('trust proxy', true)
   .use(express.json())
   .use(session({
     secret: randomUUID(),
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 120000, secure: false },
+    cookie: { maxAge: 120000, secure: true },
     unset: 'destroy'
   }))
   .use('/auth', Login)

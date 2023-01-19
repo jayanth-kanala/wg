@@ -59,7 +59,8 @@ const DashboardComponent = {
       }
     },
     async logout() {
-      await apiCall('POST', '/logout')
+      clearInterval(intervalId);
+      await apiCall('POST', '/auth/logout')
       this.$router.push('/')
     }
   },
