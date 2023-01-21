@@ -1,5 +1,6 @@
 apk add docker nginx htop certbot-nginx
 
+# nginx config
 umask 077; mkdir /etc/nginx/sites-available; mkdir /etc/nginx/sites-enabled
 
 cp /etc/nginx/http.d/default.conf /etc/nginx/sites-available/wg.conf
@@ -16,11 +17,27 @@ ln -s /etc/nginx/sites-available/wg.conf /etc/nginx/sites-enabled/wg.conf
 vim /etc/nginx/sites-available/wg.conf
 # add server_name winefish.duckdns.org
 # location / {
-#     proxy_set_header Host $host;
-#     proxy_set_header X-Real-IP $remote_addr;
-#     proxy_pass http://localhost:51821;
-# }
+# 		proxy_set_header Host $host;
+# 		proxy_set_header X-Real-IP $remote_addr;
+# 		proxy_set_header X-Forwarded-Proto $scheme;
+# 		proxy_pass http://[::]:51821;
+# 	}
+
+# docker config
+# https://docs.docker.com/config/daemon/ipv6/
+vim /etc/docker/daemon.json
+{
+	"ipv6": true,
+	"fixed-cidr-v6": "fde4:5bc0:bb7::/64"
+}
+
 certbot --nginx
+
+# update in wg.conf
+vim /etc/nginx/sites-available/wg.conf
+listen [::]:443 ssl ipv6only=on http2; # managed by Certbot
+# comment this
+# listen 443 ssl; # managed by Cerbot
 
 rc-update add docker
 rc-update add nginx
