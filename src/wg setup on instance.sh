@@ -1,4 +1,4 @@
-apk add docker nginx htop certbot-nginx
+apk add docker nginx certbot-nginx
 
 # nginx config
 umask 077; mkdir /etc/nginx/sites-available; mkdir /etc/nginx/sites-enabled
@@ -44,6 +44,16 @@ rc-update add nginx
 service docker start
 service nginx start
 
+ docker run -d \
+ --name ipv6nat \
+ --cap-add=NET_ADMIN \
+ --cap-add=SYS_MODULE \
+ --network host \
+ --restart unless-stopped \
+ -v /var/run/docker.sock:/var/run/docker.sock:ro \
+ -v /lib/modules:/lib/modules:ro \
+ robbertkl/ipv6nat
+
 docker run -d \
  --name=wine-wg \
  -e PASSWORD="" \
@@ -55,6 +65,8 @@ docker run -d \
  --cap-add=NET_ADMIN \
  --cap-add=SYS_MODULE \
  --sysctl="net.ipv4.ip_forward=1" \
- --sysctl="net.ipv4.conf.all.src_valid_mark=1" \
+ --sysctl="net.ipv6.conf.all.disable_ipv6=0" \
+ --sysctl="net.ipv6.conf.all.forwarding=1" \
+ --sysctl="net.ipv6.conf.all.accept_ra=2" \
  --restart unless-stopped \
  winefish/wine-wg

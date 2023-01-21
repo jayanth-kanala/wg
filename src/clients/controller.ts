@@ -28,9 +28,11 @@ class Clients {
     const preSharedKey = await Utils.processExec('wg genpsk');
 
     const address = Utils.getClientIp(wgConfig);
+    const address6 = Utils.getClientIp6(wgConfig);
     // Create Client
     const client = <WgConfig['clients'][0]>{
       address,
+      address6,
       createdAt: new Date(),
       enabled: true,
       id: randomUUID(),

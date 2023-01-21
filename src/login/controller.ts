@@ -20,12 +20,12 @@ class Login {
         console.error(error);
         return;
       }
-      next();
     });
+    res.json({ error: false, message: "success" });
   }
 
   async checkLogin(req: Request, res: Response, next: NextFunction) {
-    if (req.session.authenticated) {
+    if (req?.session?.authenticated) {
       next();
     } else {
       res.locals.statusCode = 401;

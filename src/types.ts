@@ -1,11 +1,13 @@
 export type WgConfig = {
   server: {
     address: string,
+    address6: string,
     privateKey: string,
     publicKey: string
   },
   clients: {
     address: string,
+    address6: string,
     allowedIPs?: string,
     createdAt: Date,
     enabled: boolean,
